@@ -1,50 +1,58 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
+import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import "./App.css";
 
-function App() {
-  const [greetMsg, setGreetMsg] = useState("");
-  const [name, setName] = useState("");
+// 定义类型以匹配 Rust 结构
+interface PrinterDto {
+  name: String;
+  system_name: String;
+  is_default: boolean;
+}
 
-  async function greet() {
-    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    setGreetMsg(await invoke("greet", { name }));
-  }
+function App() {
+  const [printers, setPrinters] = useState<PrinterDto[]>([]);
+
+  // 调用 Rust 后端获取打印机
+  const refreshPrinters = async () => {
+    try {
+      const list = await invoke<PrinterDto[]>("agent_get_printers");
+      setPrinters(list);
+    } catch (e) {
+      console.error("获取打印机失败", e);
+    }
+  };
+
+  useEffect(() => {
+    refreshPrinters();
+  }, []);
 
   return (
-    <main className="container">
-      <h1>Welcome to Tauri + React</h1>
-
-      <div className="row">
-        <a href="https://vite.dev" target="_blank">
-          <img src="/vite.svg" className="logo vite" alt="Vite logo" />
-        </a>
-        <a href="https://tauri.app" target="_blank">
-          <img src="/tauri.svg" className="logo tauri" alt="Tauri logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+    <div className="container" style={{padding: '20px', fontFamily: 'sans-serif', maxWidth: '800px', margin: '0 auto'}}>
+      <h1 style={{borderBottom: '2px solid #eee', paddingBottom: '10px'}}>🖨️ DeepPrint Agent 控制台</h1>
+      
+      <div style={{background: '#e0f2f1', padding: '15px', borderRadius: '8px', marginBottom: '20px', color: '#00695c'}}>
+        <p style={{margin: '5px 0'}}>✅ <strong>服务状态：</strong> 运行中</p>
+        <p style={{margin: '5px 0'}}>🌐 <strong>监听接口：</strong> <a href="http://localhost:18088/printers" target="_blank" style={{color: '#00695c'}}>http://localhost:18088</a></p>
       </div>
-      <p>Click on the Tauri, Vite, and React logos to learn more.</p>
 
-      <form
-        className="row"
-        onSubmit={(e) => {
-          e.preventDefault();
-          greet();
-        }}
-      >
-        <input
-          id="greet-input"
-          onChange={(e) => setName(e.currentTarget.value)}
-          placeholder="Enter a name..."
-        />
-        <button type="submit">Greet</button>
-      </form>
-      <p>{greetMsg}</p>
-    </main>
+      <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px'}}>
+        <h3>本机打印机列表 ({printers.length})</h3>
+        <button onClick={refreshPrinters} style={{padding: '8px 16px', cursor: 'pointer'}}>刷新列表</button>
+      </div>
+      
+      <ul style={{listStyle: 'none', padding: 0, border: '1px solid #eee', borderRadius: '8px'}}>
+        {printers.map((p, idx) => (
+          <li key={idx} style={{padding: '15px', borderBottom: idx < printers.length -1 ? '1px solid #eee' : 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+            <div>
+              <span style={{fontWeight: 'bold', fontSize: '1.1em'}}>{p.name}</span>
+              <div style={{fontSize: '0.8em', color: '#666'}}>{p.system_name}</div>
+            </div>
+            <button onClick={() => alert(`测试任务已发送至: ${p.name}`)} style={{padding: '6px 12px', fontSize: '0.9em', cursor: 'pointer'}}>测试打印</button>
+          </li>
+        ))}
+        {printers.length === 0 && <li style={{padding: '20px', textAlign: 'center', color: '#999'}}>未检测到打印机</li>}
+      </ul>
+    </div>
   );
 }
 
