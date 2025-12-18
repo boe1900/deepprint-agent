@@ -25,6 +25,9 @@ struct PrinterInfo {
 pub struct PrintRequest {
     task_id: String,
     content: String,
+    // 新增：宽和高 (单位 mm)，可选参数，默认 A4
+    pub width_mm: Option<f32>,
+    pub height_mm: Option<f32>,
 }
 
 #[derive(Serialize)]
@@ -64,7 +67,7 @@ async fn handle_print(Json(req): Json<PrintRequest>) -> Json<ApiResponse> {
     let engine = Engine::new();
 
     // 1. 获取 PDF 数据 (现在是 Vec<u8> 类型)
-    let pdf_bytes = engine.generate_pdf(&req.content);
+    let pdf_bytes = engine.generate_pdf(&req.content, req.width_mm, req.height_mm);
 
     let output_path = dirs::desktop_dir()
         .unwrap_or(PathBuf::from("."))

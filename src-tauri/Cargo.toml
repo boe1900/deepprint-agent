@@ -39,3 +39,6 @@ tracing-subscriber = "0.3"
 
 dirs = "5.0"
 
+# 二维码生成库
+qrcode = "0.14"
+regex = "1"
