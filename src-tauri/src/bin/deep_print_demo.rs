@@ -1,4 +1,6 @@
+#[path = "../deep_print_schema.rs"]
 mod deep_print_schema;
+#[path = "../renderer.rs"]
 mod renderer;
 
 use crate::deep_print_schema::*;
